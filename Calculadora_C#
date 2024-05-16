@@ -1,0 +1,118 @@
+
+using System;
+using System.Collections.Generic;
+
+public class CalculoInss
+{
+    private List<Inss> tabela = new List<Inss>();
+
+    public CalculoInss()
+    {
+        tabela.Add(new Inss(0, 1412.00f, 0.0750f));
+        tabela.Add(new Inss(1412.01f, 2000.00f, 0.090f));
+        tabela.Add(new Inss(2000.01f, 4000.03f, 0.120f));
+        tabela.Add(new Inss(4000.04f, 7786.02f, 0.140f));
+    }
+
+    public float CalcularDesconto(float salarioBruto)
+    {
+        float desconto = 0;
+        foreach (var faixa in tabela)
+        {
+            if (salarioBruto > faixa.FaixaInicio)
+            {
+                float valor = Math.Min(salarioBruto, faixa.FaixaFim) - faixa.FaixaInicio;
+                desconto += valor * faixa.Aliquota;
+            }
+        }
+        return desconto;
+    }
+}
+
+public class Inss
+{
+    public float FaixaInicio { get; private set; }
+    public float FaixaFim { get; private set; }
+    public float Aliquota { get; private set; }
+
+    public Inss(float valorInicio, float valorFim, float aliquota)
+    {
+        FaixaInicio = valorInicio;
+        FaixaFim = valorFim;
+        Aliquota = aliquota;
+    }
+
+    public bool ContemValor(float valor)
+    {
+        return valor >= FaixaInicio && valor <= FaixaFim;
+    }
+}
+
+public class CalculadoraIRRF
+{
+    private double salarioBruto;
+
+    public CalculadoraIRRF(double salarioBruto)
+    {
+        this.salarioBruto = salarioBruto;
+    }
+
+    public double CalcularINSS()
+    {
+        CalculoInss calculoInss = new CalculoInss();
+        return calculoInss.CalcularDesconto((float)salarioBruto);
+    }
+
+    public double CalcularSalarioBase()
+    {
+        double descontoINSS = CalcularINSS();
+        double salarioBase = salarioBruto - descontoINSS;
+        return salarioBase;
+    }
+
+    public double CalcularIRRF()
+    {
+        double salarioBase = CalcularSalarioBase();
+
+        double irrf;
+        if (salarioBase <= 2259.20)
+        {
+            irrf = 0;
+        }
+        else if (salarioBase <= 2826.65)
+        {
+            irrf = salarioBase * 0.075 - 169.44;
+        }
+        else if (salarioBase <= 3751.05)
+        {
+            irrf = salarioBase * 0.15 - 381.44;
+        }
+        else if (salarioBase <= 4664.68)
+        {
+            irrf = salarioBase * 0.225 - 662.77;
+        }
+        else
+        {
+            irrf = salarioBase * 0.275 - 896.00;
+        }
+
+        return irrf;
+    }
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        double salarioBruto = 3000.00;
+        CalculadoraIRRF calculadora = new CalculadoraIRRF(salarioBruto);
+
+        double descontoINSS = calculadora.CalcularINSS();
+        double descontoIRRF = calculadora.CalcularIRRF();
+        double salarioLiquido = salarioBruto - descontoINSS - descontoIRRF;
+        Console.WriteLine("Salário Bruto: R$" + salarioBruto);
+        Console.WriteLine("Desconto do INSS: " + descontoINSS.ToString("C2"));
+        Console.WriteLine("Desconto do IRRF: " + descontoIRRF.ToString("C2"));
+        Console.WriteLine("Salário Base: " + salarioLiquido.ToString("C2"));
+    }
+}
